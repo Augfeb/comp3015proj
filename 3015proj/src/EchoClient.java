@@ -23,7 +23,7 @@ public class EchoClient {
 		
 		byte[] buffer = new byte[1024];
 		
-		System.out.print("Please input a message: ");
+		System.out.print("Please input username and password: ");
 		String str = scanner.nextLine();
 		
 		out.writeInt(str.length());
@@ -34,6 +34,15 @@ public class EchoClient {
 		in.read(buffer, 0, len);
 		
 		System.out.println(new String(buffer, 0, len));
+		
+		 String reMsg = (new String(buffer, 0, len));
+		 
+		 if(reMsg.equals("Wrong password...") || reMsg.equals("User not found...")) {
+			 System.exit(-1);
+		 }
+		 
+		 System.out.println("hello");
+	
 		
 		clientSocket.close();
 		scanner.close();
