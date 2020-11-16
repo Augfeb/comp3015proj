@@ -57,6 +57,11 @@ public class EchoClient {
 					|| str.equals("6") || str.equals("7")) {
 				out.writeInt(str.length());
 				out.write(str.getBytes(), 0, str.length());
+				
+				len = in.readInt();
+				in.read(buffer, 0, len);
+				System.out.println(new String(buffer, 0, len));
+				
 			} else {
 				System.out.println("Incorrect value...");
 			}
