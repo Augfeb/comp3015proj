@@ -29,39 +29,48 @@ public class EchoServer {
 			in.read(buffer, 0, len);
 
 			String str = new String(buffer, 0, len);
-			
-			String [] parts = str.split(" ");
+
+			String[] parts = str.split(" ");
 			String part1 = parts[0];
 			String part2 = parts[1];
-		
-		
-			for(int i=0; i< userList.size();i++) {
-				if(userList.get(i).username.equals(part1)) {
+
+			for (int i = 0; i < userList.size(); i++) {
+				if (userList.get(i).username.equals(part1)) {
 					System.out.println("gd username case");
-					if(userList.get(i).password.equals(part2)) {
+					if (userList.get(i).password.equals(part2)) {
 						System.out.println("gd pw case");
 						str = "Loggin you in...";
 						out.writeInt(str.length());
 						out.write(str.getBytes(), 0, str.length());
-					}else {
+					} else {
 						System.out.println("wrong pw case");
 						str = ("Wrong password...");
 						out.writeInt(str.length());
 						out.write(str.getBytes(), 0, str.length());
-						
+
 					}
-				}else {
+				} else {
 					System.out.println("wrong username case");
 					str = ("User not found...");
 					out.writeInt(str.length());
 					out.write(str.getBytes(), 0, str.length());
-				
+
 				}
-			
+
 			}
 
-//			out.writeInt(str.length());
-//			out.write(str.getBytes(), 0, str.length());
+		
+			while(true){
+
+				len = in.readInt();
+				in.read(buffer, 0, len);
+
+				String number = new String(buffer, 0, len);
+				System.out.println(number);
+				if (number.equals("8")) {
+					break;
+				}
+			}
 
 			clientSocket.close();
 		}
