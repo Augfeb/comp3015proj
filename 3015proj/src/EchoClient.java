@@ -23,19 +23,21 @@ public class EchoClient {
 
 		byte[] buffer = new byte[1024];
 
-		System.out.print("Please input username and password: "); //ask for input username and password
+		System.out.print("Please input username and password: "); // ask for input username and password
 		String str = scanner.nextLine();
 
-		out.writeInt(str.length()); 
-		out.write(str.getBytes(), 0, str.length()); //send inputted data to server
+		out.writeInt(str.length());
+		out.write(str.getBytes(), 0, str.length()); // send inputted data to server
 
 		int len = in.readInt();
 		in.read(buffer, 0, len);
-		String reMsg = (new String(buffer, 0, len)); //receive message (welcome or not) from server
+		String reMsg = (new String(buffer, 0, len)); // receive message (welcome or not) from server
 		System.out.println(reMsg);
 
-		if (reMsg.equals("Wrong password...") || reMsg.equals("User not found...")) { //if cannot log in then exit
-			System.exit(-1);
+		if (reMsg.equals("Wrong password...") || reMsg.equals("User not found...")) { // if cannot log in then exit
+			clientSocket.close();
+			scanner.close();
+			return;
 		}
 
 		System.out.println();
@@ -48,25 +50,25 @@ public class EchoClient {
 			System.out.println();
 			System.out.print("\nType number to perform activities: ");
 			str = scanner.nextLine();
-			if (str.equals("8")) { //if user choose to exit then exit
+			if (str.equals("8")) { // if user choose to exit then exit
 //				out.writeInt(str.length());
 //				out.write(str.getBytes(), 0, str.length());
 				doWork(out, str);
 				System.out.println("Exit successfully...");
 				break;
-			} else if (str.equals("1")) { //user want to read file list then provide file list
+			} else if (str.equals("1")) { // user want to read file list then provide file list
 				doWork(out, str);
 				do {
 					len = in.readInt();
 					in.read(buffer, 0, len);
 					System.out.println(new String(buffer, 0, len));
 				} while (in.available() > 0);
-			} else if (str.equals("2")) { //create new subdirectories
-				doWork(out,str);
-				
+			} else if (str.equals("2")) { // create new subdirectories
+				doWork(out, str);
+
 				System.out.println("Enter the subdirectory path: ");
 				str = scanner.nextLine();
-				doWork(out,str);
+				doWork(out, str);
 				len = in.readInt();
 				in.read(buffer, 0, len);
 				System.out.println(new String(buffer, 0, len));
@@ -74,11 +76,36 @@ public class EchoClient {
 			} else if (str.equals("3")) {
 
 			} else if (str.equals("4")) {
+				doWork(out, str);
 
+				System.out.println("Enter the file path to be delected: ");
+				str = scanner.nextLine();
+				doWork(out, str);
+				len = in.readInt();
+				in.read(buffer, 0, len);
+				System.out.println(new String(buffer, 0, len));
 			} else if (str.equals("5")) {
+				doWork(out, str);
 
+				System.out.println("Enter the subdirectory path to be delected: ");
+				str = scanner.nextLine();
+				doWork(out, str);
+				len = in.readInt();
+				in.read(buffer, 0, len);
+				System.out.println(new String(buffer, 0, len));
 			} else if (str.equals("6")) {
+				doWork(out, str);
+				String s1, s2;
 
+				System.out.println("Enter the file/dir path with original name: ");
+				str = scanner.nextLine();
+				doWork(out, str);
+				System.out.println("Enter the file/dir path with new name: ");
+				str = scanner.nextLine();
+				doWork(out, str);
+				len = in.readInt();
+				in.read(buffer, 0, len);
+				System.out.println(new String(buffer, 0, len));
 			} else if (str.equals("7")) {
 
 			} else {
@@ -98,10 +125,11 @@ public class EchoClient {
 		out2.writeInt(str.length());
 		out2.write(str.getBytes(), 0, str.length());
 	}
-	
+
 	private void doWork(DataInputStream in2, DataOutputStream out2, Socket soc, String s) {
-		
+
 	}
+
 	public static void main(String[] args) throws IOException {
 		new EchoClient();
 	}

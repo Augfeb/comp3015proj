@@ -26,7 +26,7 @@ public class EchoServer {
 		srvSocket = new ServerSocket(port);
 
 		byte[] buffer = new byte[1024];
-
+		boolean approved = false;
 		while (true) {
 			System.out.printf("Listening at port %d...\n", port);
 
@@ -53,25 +53,23 @@ public class EchoServer {
 					if (userList.get(i).password.equals(part2)) {
 						System.out.println("gd pw case");
 						str = "Loggin you in...";
-//						out.writeInt(str.length());
-//						out.write(str.getBytes(), 0, str.length());
 						doOut(out, str);
+						approved = true;
 					} else {
 						System.out.println("wrong pw case");
 						str = ("Wrong password...");
 						doOut(out, str);
-						
+						approved = false;
 					}
 				} else {
 					System.out.println("wrong username case");
 					str = ("User not found...");
-//					out.writeInt(str.length());
-//					out.write(str.getBytes(), 0, str.length());
 					doOut(out, str);
+					approved = false;
 				}
 			}
 
-			while (true) {
+			while (approved) {
 
 				len = in.readInt();
 				in.read(buffer, 0, len);
@@ -100,6 +98,37 @@ public class EchoServer {
 					String pathName = path+str;					
 					str = md(pathName);
 					doOut(out, str);
+				}else if(number.equals("3")) {
+					
+				}else if(number.equals("4")) {
+					len = in.readInt();
+					in.read(buffer, 0, len);
+					str = new String(buffer, 0, len);
+					String pathName = path+str;					
+					str = del(pathName);
+					doOut(out, str);
+				}else if(number.equals("5")) {
+					len = in.readInt();
+					in.read(buffer, 0, len);
+					str = new String(buffer, 0, len);
+					String pathName = path+str;					
+					str = rd(pathName);
+					doOut(out, str);
+				}else if(number.equals("6")) {
+					String s1, s2;
+					len = in.readInt();
+					in.read(buffer, 0, len);
+					s1 = path + new String(buffer, 0, len);
+								
+					
+					len = in.readInt();
+					in.read(buffer, 0, len);
+					s2 = path + new String(buffer, 0, len);
+					
+					str = rename(s1,s2);
+					doOut(out, str);
+				}else if(number.equals("7")) {
+					
 				}
 			}
 
@@ -145,6 +174,56 @@ public class EchoServer {
 		}
 		dir.mkdirs();
 		s = ("File/Directory created");
+		return s;
+	}
+	
+	private String del(String path) {
+		String s;
+		File dir = new File(path);
+		if (!dir.exists()) {
+			s = ("File not found");
+			return s;
+		}
+		if (dir.isFile()) {
+			dir.delete();
+			s = ("Deleted");
+		} else
+			s =("To delete a directory, you should use RD command.");
+		return s;
+	}
+	
+	private String rd(String pathname) {
+		File dir = new File(pathname);
+		String s;
+		if (!dir.exists()) {
+			s =("File not found");
+			return s;
+		}
+		if (dir.isDirectory()) {
+			String[] list = dir.list();
+			if (list == null || list.length == 0) {
+				dir.delete();
+				s = ("Deleted");
+			} else {
+				s = ("The directory " + dir + " is not empty!");
+			}
+		} else
+			s = ("To delete a file, you should use DEL command.");
+		return s;
+	}
+	
+	private String rename(String ori, String newName) {
+		String s;
+		File oriFile = new File(ori);
+		File newFile = new File(newName);
+		
+		 
+		if (oriFile.renameTo(newFile)) {
+		    s = ("File renamed successfully");
+		} else {
+		    s = ("Failed to rename");
+		}
+		System.out.println(s);
 		return s;
 	}
 
