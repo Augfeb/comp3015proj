@@ -11,8 +11,17 @@ import java.util.Date;
 public class EchoServer {
 	ServerSocket srvSocket;
 	static ArrayList<User> userList = new ArrayList<User>();
-	static final String path = "D:\\Download";
+	static final String path = "D:\\proj";
 
+	private void doOut(DataOutputStream out2, String str) throws IOException {
+		out2.writeInt(str.length());
+		out2.write(str.getBytes(), 0, str.length());
+	}
+	
+	private void doIn(DataOutputStream in2, String str) throws IOException {
+
+	}
+	
 	public EchoServer(int port) throws IOException {
 		srvSocket = new ServerSocket(port);
 
@@ -44,23 +53,22 @@ public class EchoServer {
 					if (userList.get(i).password.equals(part2)) {
 						System.out.println("gd pw case");
 						str = "Loggin you in...";
-						out.writeInt(str.length());
-						out.write(str.getBytes(), 0, str.length());
+//						out.writeInt(str.length());
+//						out.write(str.getBytes(), 0, str.length());
+						doOut(out, str);
 					} else {
 						System.out.println("wrong pw case");
 						str = ("Wrong password...");
-						out.writeInt(str.length());
-						out.write(str.getBytes(), 0, str.length());
-
+						doOut(out, str);
+						
 					}
 				} else {
 					System.out.println("wrong username case");
 					str = ("User not found...");
-					out.writeInt(str.length());
-					out.write(str.getBytes(), 0, str.length());
-
+//					out.writeInt(str.length());
+//					out.write(str.getBytes(), 0, str.length());
+					doOut(out, str);
 				}
-
 			}
 
 			while (true) {
@@ -69,16 +77,29 @@ public class EchoServer {
 				in.read(buffer, 0, len);
 
 				String number = new String(buffer, 0, len);
-				String info;
+				ArrayList<String> info;
 				System.out.println(number);
+				System.out.println();
 				if (number.equals("8")) {
 					break;
-				}
-				if (number.equals("1")) {
-					info = dir(path);
-					System.out.println(info);
-					out.writeInt(info.length());
-					out.write(info.getBytes(), 0, info.length());
+				} else if (number.equals("1")) {
+
+					if (dir(path) != null) {
+						info = dir(path);
+						for (String s : info) {
+							doOut(out,s);
+						}
+					} else {
+						str = "No file/subdirectory in this root directory";
+						doOut(out, str);
+					}
+				} else if (number.equals("2")) {
+					len = in.readInt();
+					in.read(buffer, 0, len);
+					str = new String(buffer, 0, len);
+					String pathName = path+str;					
+					str = md(pathName);
+					doOut(out, str);
 				}
 			}
 
@@ -86,9 +107,10 @@ public class EchoServer {
 		}
 	}
 
-	private String dir(String pathName) {
+	private ArrayList<String> dir(String pathName) {
 		File dir = new File(pathName);
-		String str1 = null, str2 = null;
+		String str1, str2;
+
 		if (!dir.exists()) {
 			System.out.println("File not found");
 			return null;
@@ -98,17 +120,34 @@ public class EchoServer {
 			System.out.println("Empty");
 			return null;
 		}
-		for (File f : files) {
-			if (f.isFile()) {
-				str1 = String.format("%s %10d %s\n", new Date(f.lastModified()), f.length(), f.getName());
-			
+		ArrayList<String> strList = new ArrayList<String>(files.length);
+
+		for (int i = 0; i < files.length; i++) {
+			if (files[i].isFile()) {
+				str1 = String.format("%s %10d %s\n", new Date(files[i].lastModified()), files[i].length(),
+						files[i].getName());
+				strList.add(str1);
 			} else {
-				str2 = String.format("%s %10s %s\n", new Date(f.lastModified()), "<DIR>", f.getName());
-				
+				str2 = String.format("%s %10s %s\n", new Date(files[i].lastModified()), "<DIR>", files[i].getName());
+				strList.add(str2);
 			}
+			System.out.println(strList.get(i));
 		}
-		return str1 + " "+ str2;
+		return strList;
 	}
+	
+	private String md(String pathname) {
+		String s;
+		File dir = new File(pathname);
+		if (dir.exists()) {
+			 s =("File/Directory exists");
+			 return s;
+		}
+		dir.mkdirs();
+		s = ("File/Directory created");
+		return s;
+	}
+
 
 	public static void main(String[] args) throws IOException {
 		User pcA = new User("pcA", "123");
