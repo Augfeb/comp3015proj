@@ -2,6 +2,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -17,11 +18,7 @@ public class EchoServer {
 		out2.writeInt(str.length());
 		out2.write(str.getBytes(), 0, str.length());
 	}
-	
-	private void doIn(DataOutputStream in2, String str) throws IOException {
 
-	}
-	
 	public EchoServer(int port) throws IOException {
 		srvSocket = new ServerSocket(port);
 
@@ -85,7 +82,7 @@ public class EchoServer {
 					if (dir(path) != null) {
 						info = dir(path);
 						for (String s : info) {
-							doOut(out,s);
+							doOut(out, s);
 						}
 					} else {
 						str = "No file/subdirectory in this root directory";
@@ -95,40 +92,63 @@ public class EchoServer {
 					len = in.readInt();
 					in.read(buffer, 0, len);
 					str = new String(buffer, 0, len);
-					String pathName = path+str;					
+					String pathName = path + str;
 					str = md(pathName);
 					doOut(out, str);
-				}else if(number.equals("3")) {
-					
-				}else if(number.equals("4")) {
+
+				} else if (number.equals("3")) {
 					len = in.readInt();
 					in.read(buffer, 0, len);
 					str = new String(buffer, 0, len);
-					String pathName = path+str;					
+					if(str.equals("1")) {
+//						len = in.readInt();
+//						in.read(buffer, 0, len);
+//						str = new String(buffer, 0, len);
+//						String pathname = path+ str;
+					}else {
+						serve(in);
+						
+					}
+
+				} else if (number.equals("4")) {
+					len = in.readInt();
+					in.read(buffer, 0, len);
+					str = new String(buffer, 0, len);
+					String pathName = path + str;
 					str = del(pathName);
 					doOut(out, str);
-				}else if(number.equals("5")) {
+
+				} else if (number.equals("5")) {
 					len = in.readInt();
 					in.read(buffer, 0, len);
 					str = new String(buffer, 0, len);
-					String pathName = path+str;					
+					String pathName = path + str;
 					str = rd(pathName);
 					doOut(out, str);
-				}else if(number.equals("6")) {
+
+				} else if (number.equals("6")) {
 					String s1, s2;
 					len = in.readInt();
 					in.read(buffer, 0, len);
 					s1 = path + new String(buffer, 0, len);
-								
-					
+
 					len = in.readInt();
 					in.read(buffer, 0, len);
 					s2 = path + new String(buffer, 0, len);
-					
-					str = rename(s1,s2);
+
+					str = rename(s1, s2);
 					doOut(out, str);
-				}else if(number.equals("7")) {
-					
+
+				} else if (number.equals("7")) {
+					len = in.readInt();
+					in.read(buffer, 0, len);
+					String filename = path + new String(buffer, 0, len);
+					String[] ary = getInfo(filename);
+
+					for (String s : ary) {
+						doOut(out, s);
+					}
+
 				}
 			}
 
@@ -164,19 +184,19 @@ public class EchoServer {
 		}
 		return strList;
 	}
-	
+
 	private String md(String pathname) {
 		String s;
 		File dir = new File(pathname);
 		if (dir.exists()) {
-			 s =("File/Directory exists");
-			 return s;
+			s = ("File/Directory exists");
+			return s;
 		}
 		dir.mkdirs();
 		s = ("File/Directory created");
 		return s;
 	}
-	
+
 	private String del(String path) {
 		String s;
 		File dir = new File(path);
@@ -188,15 +208,15 @@ public class EchoServer {
 			dir.delete();
 			s = ("Deleted");
 		} else
-			s =("To delete a directory, you should use RD command.");
+			s = ("To delete a directory, you should use RD command.");
 		return s;
 	}
-	
+
 	private String rd(String pathname) {
 		File dir = new File(pathname);
 		String s;
 		if (!dir.exists()) {
-			s =("File not found");
+			s = ("File not found");
 			return s;
 		}
 		if (dir.isDirectory()) {
@@ -211,22 +231,94 @@ public class EchoServer {
 			s = ("To delete a file, you should use DEL command.");
 		return s;
 	}
-	
+
 	private String rename(String ori, String newName) {
 		String s;
 		File oriFile = new File(ori);
 		File newFile = new File(newName);
-		
-		 
+
 		if (oriFile.renameTo(newFile)) {
-		    s = ("File renamed successfully");
+			s = ("File renamed successfully");
 		} else {
-		    s = ("Failed to rename");
+			s = ("Failed to rename");
 		}
 		System.out.println(s);
 		return s;
 	}
 
+	private String[] getInfo(String filename) throws IOException {
+		File file = new File(filename);
+		String[] strAry;
+		if (!file.exists()) {
+			strAry = new String[1];
+			strAry[0] = "File not found...";
+			return strAry;
+		}
+
+		if (file.isFile()) {
+			strAry = new String[16];
+			strAry[0] = ("name : " + file.getName());
+			strAry[1] = ("size (bytes) : " + file.length());
+			strAry[2] = ("absolute path? : " + file.isAbsolute());
+			strAry[3] = ("exists? : " + file.exists());
+			strAry[4] = ("hidden? : " + file.isHidden());
+			strAry[5] = ("dir? : " + file.isDirectory());
+			strAry[6] = ("file? : " + file.isFile());
+			strAry[7] = ("modified (timestamp) : " + file.lastModified());
+			strAry[8] = ("readable? : " + file.canRead());
+			strAry[9] = ("writable? : " + file.canWrite());
+			strAry[10] = ("executable? : " + file.canExecute());
+			strAry[11] = ("parent : " + file.getParent());
+			strAry[12] = ("absolute file : " + file.getAbsoluteFile());
+			strAry[13] = ("absolute path : " + file.getAbsolutePath());
+			strAry[14] = ("canonical file : " + file.getCanonicalFile());
+			strAry[15] = ("canonical path : " + file.getCanonicalPath());
+		} else {
+			strAry = new String[1];
+			strAry[0] = "Not a file...";
+		}
+		return strAry;
+	}
+
+	private String checkFile(String filename) {
+		String s;
+		File file = new File(filename);
+		if (file.exists()) {
+			return s = "Downloading...";
+		} else
+			return s = "Uploading...";
+	}
+
+	private void serve(DataInputStream in) {
+		byte[] buffer = new byte[1024];
+		try {
+			int nameLen = in.readInt();
+			in.read(buffer, 0, nameLen);
+			String name = new String(buffer, 0, nameLen);
+
+			System.out.print("Downloading file %s " + name);
+
+			long size = in.readLong();
+			System.out.printf("(%d)", size);
+
+			
+			File file = new File(name);
+			FileOutputStream out = new FileOutputStream(file);
+
+			while(size > 0) {
+				int len = in.read(buffer, 0, buffer.length);
+				out.write(buffer, 0, len);
+				size -= len;
+				System.out.print(".");
+			}
+			System.out.println("\nDownload completed.");
+			
+			in.close();
+			out.close();
+		} catch (IOException e) {
+			System.err.println("unable to download file.");
+		}
+	}
 
 	public static void main(String[] args) throws IOException {
 		User pcA = new User("pcA", "123");

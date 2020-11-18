@@ -1,7 +1,10 @@
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.net.UnknownHostException;
 import java.util.Scanner;
 
 public class EchoClient {
@@ -51,63 +54,86 @@ public class EchoClient {
 			System.out.print("\nType number to perform activities: ");
 			str = scanner.nextLine();
 			if (str.equals("8")) { // if user choose to exit then exit
-//				out.writeInt(str.length());
-//				out.write(str.getBytes(), 0, str.length());
-				doWork(out, str);
+				doOut(out, str);
 				System.out.println("Exit successfully...");
 				break;
 			} else if (str.equals("1")) { // user want to read file list then provide file list
-				doWork(out, str);
+				doOut(out, str);
 				do {
 					len = in.readInt();
 					in.read(buffer, 0, len);
 					System.out.println(new String(buffer, 0, len));
 				} while (in.available() > 0);
 			} else if (str.equals("2")) { // create new subdirectories
-				doWork(out, str);
+				doOut(out, str);
 
 				System.out.println("Enter the subdirectory path: ");
 				str = scanner.nextLine();
-				doWork(out, str);
+				doOut(out, str);
 				len = in.readInt();
 				in.read(buffer, 0, len);
 				System.out.println(new String(buffer, 0, len));
 
 			} else if (str.equals("3")) {
-
+				doOut(out, str);
+				System.out.println("Input 1 to download; 2 to upload: ");
+				str = scanner.nextLine();
+				doOut(out, str);
+				
+				if(str.equals("1")) {
+//					System.out.println("Enter the file path to download: ");
+//					str = scanner.nextLine();
+//					doOut(out, str);
+				}else {
+					System.out.println("Enter the file path to upload: ");
+					String filename = scanner.nextLine().trim();
+					upload(out, filename);
+				}
+				
 			} else if (str.equals("4")) {
-				doWork(out, str);
+				doOut(out, str);
 
 				System.out.println("Enter the file path to be delected: ");
 				str = scanner.nextLine();
-				doWork(out, str);
+				doOut(out, str);
 				len = in.readInt();
 				in.read(buffer, 0, len);
 				System.out.println(new String(buffer, 0, len));
+				
 			} else if (str.equals("5")) {
-				doWork(out, str);
+				doOut(out, str);
 
 				System.out.println("Enter the subdirectory path to be delected: ");
 				str = scanner.nextLine();
-				doWork(out, str);
+				doOut(out, str);
 				len = in.readInt();
 				in.read(buffer, 0, len);
 				System.out.println(new String(buffer, 0, len));
+				
 			} else if (str.equals("6")) {
-				doWork(out, str);
+				doOut(out, str);
 				String s1, s2;
 
 				System.out.println("Enter the file/dir path with original name: ");
 				str = scanner.nextLine();
-				doWork(out, str);
+				doOut(out, str);
 				System.out.println("Enter the file/dir path with new name: ");
 				str = scanner.nextLine();
-				doWork(out, str);
+				doOut(out, str);
 				len = in.readInt();
 				in.read(buffer, 0, len);
 				System.out.println(new String(buffer, 0, len));
+				
 			} else if (str.equals("7")) {
-
+				doOut(out, str);
+				System.out.println("Enter the file path: ");
+				str = scanner.nextLine();
+				doOut(out, str);
+				do {
+					len = in.readInt();
+					in.read(buffer, 0, len);
+					System.out.println(new String(buffer, 0, len));
+				} while (in.available() > 0);
 			} else {
 				System.out.println();
 				System.out.println("Incorrect value...");
@@ -120,15 +146,48 @@ public class EchoClient {
 		clientSocket.close();
 		scanner.close();
 	}
+	
+	private void upload(DataOutputStream out, String filename) throws IOException {
+		try {
+			
+			
+			byte[] buffer = new byte[1024];
+			File file = new File(filename);
 
-	private void doWork(DataOutputStream out2, String str) throws IOException {
+			if (!file.exists() || file.isDirectory()) {
+				System.err.println("File not found!");
+				return;
+			}
+
+			FileInputStream in = new FileInputStream(file);
+			System.out.println(file.getName());
+			out.writeInt(file.getName().length());
+			out.write(file.getName().getBytes());
+			long size = file.length();
+			out.writeLong(size);
+
+			while (size > 0) {
+				int len = in.read(buffer, 0, buffer.length);
+				out.write(buffer, 0, len);
+				size -= len;
+			}
+
+			in.close();
+			out.close();
+		} catch (UnknownHostException u) {
+			System.out.println("Could not determine the IP address of the host!");
+			return;
+		} catch (IOException e) {
+			System.out.println("Fail to upload file!");
+			return;
+		}
+	}
+
+	private void doOut(DataOutputStream out2, String str) throws IOException {
 		out2.writeInt(str.length());
 		out2.write(str.getBytes(), 0, str.length());
 	}
 
-	private void doWork(DataInputStream in2, DataOutputStream out2, Socket soc, String s) {
-
-	}
 
 	public static void main(String[] args) throws IOException {
 		new EchoClient();
