@@ -6,6 +6,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Date;
 
@@ -99,15 +100,19 @@ public class EchoServer {
 				} else if (number.equals("3")) {
 					len = in.readInt();
 					in.read(buffer, 0, len);
-					str = new String(buffer, 0, len);
-					if(str.equals("1")) {
-//						len = in.readInt();
-//						in.read(buffer, 0, len);
-//						str = new String(buffer, 0, len);
-//						String pathname = path+ str;
-					}else {
+					str = new String(buffer, 0, len); // store 1 or 2
+
+					if (str.equals("1")) {
+						len = in.readInt();
+						in.read(buffer, 0, len);
+						str = new String(buffer, 0, len); // store filename
+						System.out.println(str); // print file name
+
+						String pathname = path + "\\" + str;
+						System.out.println(pathname);
+						transfer(out, pathname);
+					} else {
 						serve(in);
-						
 					}
 
 				} else if (number.equals("4")) {
@@ -280,13 +285,38 @@ public class EchoServer {
 		return strAry;
 	}
 
-	private String checkFile(String filename) {
-		String s;
-		File file = new File(filename);
-		if (file.exists()) {
-			return s = "Downloading...";
-		} else
-			return s = "Uploading...";
+	private void transfer(DataOutputStream out, String filename) {
+
+		try {
+			byte[] buffer = new byte[1024];
+			File file = new File(filename);
+
+//			if (!file.exists() || file.isDirectory()) {
+//				System.out.println("File not found!");	
+//			}
+			String s = ("Transfering...");
+			System.out.println(s);
+			doOut(out, s);
+			
+			FileInputStream in = new FileInputStream(file);
+			out.writeInt(file.getName().length());
+			out.write(file.getName().getBytes());
+
+			long size = file.length();
+			out.writeLong(size);
+
+			while (size > 0) {
+				int len = in.read(buffer, 0, buffer.length);
+				out.write(buffer, 0, len);
+				size -= len;
+			}
+
+			in.close();
+		} catch (IOException e) {
+			System.out.println("Fail to transfer file...");
+			
+		}
+
 	}
 
 	private void serve(DataInputStream in) {
@@ -294,26 +324,23 @@ public class EchoServer {
 		try {
 			int nameLen = in.readInt();
 			in.read(buffer, 0, nameLen);
-			String name = new String(buffer, 0, nameLen);
+			String name = path + "\\" + new String(buffer, 0, nameLen);
 
 			System.out.print("Downloading file %s " + name);
 
 			long size = in.readLong();
 			System.out.printf("(%d)", size);
 
-			
 			File file = new File(name);
 			FileOutputStream out = new FileOutputStream(file);
 
-			while(size > 0) {
+			while (size > 0) {
 				int len = in.read(buffer, 0, buffer.length);
 				out.write(buffer, 0, len);
 				size -= len;
-				System.out.print(".");
 			}
 			System.out.println("\nDownload completed.");
-			
-			in.close();
+
 			out.close();
 		} catch (IOException e) {
 			System.err.println("unable to download file.");

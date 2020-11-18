@@ -2,6 +2,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 import java.net.UnknownHostException;
@@ -75,21 +76,35 @@ public class EchoClient {
 				System.out.println(new String(buffer, 0, len));
 
 			} else if (str.equals("3")) {
-				doOut(out, str);
+				doOut(out, str); //send out 3
 				System.out.println("Input 1 to download; 2 to upload: ");
 				str = scanner.nextLine();
-				doOut(out, str);
-				
-				if(str.equals("1")) {
-//					System.out.println("Enter the file path to download: ");
-//					str = scanner.nextLine();
-//					doOut(out, str);
-				}else {
+				doOut(out, str); // send out 1 or 2
+
+				if (str.equals("1")) { //choose download
+					System.out.println("Enter the file name to download: ");
+					String filename = scanner.nextLine().trim();
+					doOut(out, filename);// send out pathname
+					System.out.println("Enter the folder to store file: ");
+					str = scanner.nextLine().trim();
+					
+					len = in.readInt();
+					in.read(buffer, 0, len);
+					String s = new String(buffer, 0, len);
+					
+					if (s.equals("Transfering..."))
+						serve(in, str);
+					else {
+						System.out.println("hi"+s);
+					}
+
+				} else if (str.equals("2")) {
 					System.out.println("Enter the file path to upload: ");
 					String filename = scanner.nextLine().trim();
 					upload(out, filename);
+					System.out.println("Uploaded...");
 				}
-				
+
 			} else if (str.equals("4")) {
 				doOut(out, str);
 
@@ -99,7 +114,7 @@ public class EchoClient {
 				len = in.readInt();
 				in.read(buffer, 0, len);
 				System.out.println(new String(buffer, 0, len));
-				
+
 			} else if (str.equals("5")) {
 				doOut(out, str);
 
@@ -109,7 +124,7 @@ public class EchoClient {
 				len = in.readInt();
 				in.read(buffer, 0, len);
 				System.out.println(new String(buffer, 0, len));
-				
+
 			} else if (str.equals("6")) {
 				doOut(out, str);
 				String s1, s2;
@@ -123,7 +138,7 @@ public class EchoClient {
 				len = in.readInt();
 				in.read(buffer, 0, len);
 				System.out.println(new String(buffer, 0, len));
-				
+
 			} else if (str.equals("7")) {
 				doOut(out, str);
 				System.out.println("Enter the file path: ");
@@ -146,11 +161,38 @@ public class EchoClient {
 		clientSocket.close();
 		scanner.close();
 	}
-	
-	private void upload(DataOutputStream out, String filename) throws IOException {
+
+	private void serve(DataInputStream in, String path) {
+		byte[] buffer = new byte[1024];
 		try {
-			
-			
+
+			int nameLen = in.readInt();
+			in.read(buffer, 0, nameLen);
+			String name = path + "\\" + new String(buffer, 0, nameLen);
+
+			System.out.print("Downloading file %s " + name);
+
+			long size = in.readLong();
+			System.out.printf("(%d)", size);
+
+			File file = new File(name);
+			FileOutputStream out = new FileOutputStream(file);
+
+			while (size > 0) {
+				int len = in.read(buffer, 0, buffer.length);
+				out.write(buffer, 0, len);
+				size -= len;
+			}
+			System.out.println("\nDownload completed.");
+			out.close();
+		} catch (IOException e) {
+			System.err.println("unable to download file.");
+		}
+	}
+
+	private void upload(DataOutputStream out, String filename) {
+		try {
+
 			byte[] buffer = new byte[1024];
 			File file = new File(filename);
 
@@ -160,9 +202,9 @@ public class EchoClient {
 			}
 
 			FileInputStream in = new FileInputStream(file);
-			System.out.println(file.getName());
 			out.writeInt(file.getName().length());
 			out.write(file.getName().getBytes());
+
 			long size = file.length();
 			out.writeLong(size);
 
@@ -173,7 +215,6 @@ public class EchoClient {
 			}
 
 			in.close();
-			out.close();
 		} catch (UnknownHostException u) {
 			System.out.println("Could not determine the IP address of the host!");
 			return;
@@ -187,7 +228,6 @@ public class EchoClient {
 		out2.writeInt(str.length());
 		out2.write(str.getBytes(), 0, str.length());
 	}
-
 
 	public static void main(String[] args) throws IOException {
 		new EchoClient();
