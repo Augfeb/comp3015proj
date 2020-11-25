@@ -32,7 +32,7 @@ public class EchoClient {
 				String msg = "requesting...";
 				DatagramSocket socket = new DatagramSocket(5555);
 				DatagramPacket packet = new DatagramPacket(msg.getBytes(), msg.length(),
-						InetAddress.getByName("255.255.255.255"), 9998);
+						InetAddress.getByName("192.168.86.255"), 9998);
 				socket.send(packet);
 
 				DatagramPacket receivedPacket = new DatagramPacket(new byte[1024], 1024);

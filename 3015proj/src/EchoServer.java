@@ -30,28 +30,21 @@ public class EchoServer {
 		Scanner scanner = new Scanner(System.in);
 		String pcName = scanner.nextLine();
 
-		new Thread(() -> {
-			try {
-				UDPreply(pcName);
-			} catch (IOException e1) {
-				e1.printStackTrace();
-			}
-		}).start();
-
-//		try {
-//			Thread.sleep(5000);
-//		} catch (InterruptedException e1) {
-//			// TODO Auto-generated catch block
-//			e1.printStackTrace();
-//		}
 		srvSocket = new ServerSocket(port);
 
 		byte[] buffer = new byte[1024];
 
 		while (true) {
+			new Thread(() -> {
+				try {
+					UDPreply(pcName);
+				} catch (IOException e1) {
+					e1.printStackTrace();
+				}
+			}).start();
 
 			Socket clientSocket = srvSocket.accept();
-			System.out.println("Listening at TCP port " + port+"...");
+			System.out.println("Listening at TCP port " + port + "...");
 			synchronized (userList) {
 				list.add(clientSocket);
 				System.out.printf("Total %d clients are connected.\n", list.size());
@@ -89,6 +82,7 @@ public class EchoServer {
 			DatagramPacket p = new DatagramPacket(reply.getBytes(), reply.length(), srcAddr, srcPort);
 			socket.send(p);
 		}
+		socket.close();
 
 	}
 
@@ -109,17 +103,17 @@ public class EchoServer {
 
 		for (int i = 0; i < userList.size(); i++) { // loop through userlist pcA pcB
 			if (userList.get(i).username.equals(part1)) { // 0:pcA 123 1: pcB 123
-				System.out.println("gd username case");
+			
 				userFound = true;
 				if (userList.get(i).password.equals(part2)) {
-					System.out.println("gd pw case");
+					
 					str = "Loggin you in...";
 					doOut(out, str);
 					approved = true;
 
 					break;
 				} else {
-					System.out.println("wrong pw case");
+				
 					str = ("Wrong password...");
 					doOut(out, str);
 					approved = false;
@@ -128,8 +122,6 @@ public class EchoServer {
 			}
 		}
 		if (!userFound) {
-
-			System.out.println("wrong username case");
 			str = ("User not found...");
 			doOut(out, str);
 			approved = false;
@@ -143,7 +135,7 @@ public class EchoServer {
 
 			String number = new String(buffer, 0, len);
 			ArrayList<String> info;
-			System.out.println(number);
+			
 			System.out.println();
 			if (number.equals("8")) {
 				break;
@@ -162,7 +154,7 @@ public class EchoServer {
 				len = in.readInt();
 				in.read(buffer, 0, len);
 				str = new String(buffer, 0, len);
-				String pathName = path + str;
+				String pathName = path+"\\" + str;
 				str = md(pathName);
 				doOut(out, str);
 
@@ -175,10 +167,9 @@ public class EchoServer {
 					len = in.readInt();
 					in.read(buffer, 0, len);
 					str = new String(buffer, 0, len); // store filename
-					System.out.println(str); // print file name
 
-					String pathname = path + "/" + str;
-					System.out.println(pathname);
+					String pathname = path + "\\" + str;
+					
 					transfer(out, pathname);
 				} else {
 					serve(in);
@@ -188,7 +179,7 @@ public class EchoServer {
 				len = in.readInt();
 				in.read(buffer, 0, len);
 				str = new String(buffer, 0, len);
-				String pathName = path + str;
+				String pathName = path +"\\"+ str;
 				str = del(pathName);
 				doOut(out, str);
 
@@ -196,7 +187,7 @@ public class EchoServer {
 				len = in.readInt();
 				in.read(buffer, 0, len);
 				str = new String(buffer, 0, len);
-				String pathName = path + "/" + str;
+				String pathName = path + "\\" + str;
 				str = rd(pathName);
 				doOut(out, str);
 
@@ -204,11 +195,11 @@ public class EchoServer {
 				String s1, s2;
 				len = in.readInt();
 				in.read(buffer, 0, len);
-				s1 = path + "/" + new String(buffer, 0, len);
+				s1 = path + "\\" + new String(buffer, 0, len);
 
 				len = in.readInt();
 				in.read(buffer, 0, len);
-				s2 = path + "/" + new String(buffer, 0, len);
+				s2 = path + "\\" + new String(buffer, 0, len);
 
 				str = rename(s1, s2);
 				doOut(out, str);
@@ -250,7 +241,6 @@ public class EchoServer {
 				str2 = String.format("%s %10s %s\n", new Date(files[i].lastModified()), "<DIR>", files[i].getName());
 				strList.add(str2);
 			}
-			System.out.println(strList.get(i));
 		}
 		return strList;
 	}
@@ -356,11 +346,8 @@ public class EchoServer {
 			byte[] buffer = new byte[1024];
 			File file = new File(filename);
 
-//			if (!file.exists() || file.isDirectory()) {
-//				System.out.println("File not found!");	
-//			}
+
 			String s = ("Transfering...");
-			// System.out.println(s);
 			doOut(out, s);
 
 			FileInputStream in = new FileInputStream(file);
@@ -389,7 +376,7 @@ public class EchoServer {
 		try {
 			int nameLen = in.readInt();
 			in.read(buffer, 0, nameLen);
-			String name = path + "/" + new String(buffer, 0, nameLen);
+			String name = path + "\\" + new String(buffer, 0, nameLen);
 
 			System.out.print("Downloading file %s " + name);
 
