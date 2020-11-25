@@ -9,40 +9,71 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.Scanner;
+
+class Server {
+	String ipAddr;
+	String hostName;
+
+	public Server(String ip, String name) {
+
+		ipAddr = ip;
+		hostName = name;
+
+	}
+}
 
 public class EchoClient {
 	Socket clientSocket;
+	static ArrayList<Server> hostList = new ArrayList<>();
 
-	public EchoClient() throws IOException, InterruptedException {
-		String msg = "requesting...";
-		DatagramSocket socket = new DatagramSocket(5555);
-		DatagramPacket packet = new DatagramPacket(msg.getBytes(), msg.length(), InetAddress.getByName("255.255.255.255"), 9998);
-		socket.send(packet);
-		
-		DatagramPacket receivedPacket = new DatagramPacket(new byte[1024], 1024);
-		while(true) {
-			System.out.println("Getting response...");
-			
-			socket.receive(receivedPacket);
-			String content = new String(receivedPacket.getData(), 0, receivedPacket.getLength());
-			
-			System.out.println(content);
-			 Thread.sleep(5000);
-			 break;
-		
-		}
+	public EchoClient() {
+		System.out.println("Getting response...");
+		Thread t2 = new Thread(() -> {
+			try {
+				String msg = "requesting...";
+				DatagramSocket socket = new DatagramSocket(5555);
+				DatagramPacket packet = new DatagramPacket(msg.getBytes(), msg.length(),
+						InetAddress.getByName("255.255.255.255"), 9998);
+				socket.send(packet);
+
+				DatagramPacket receivedPacket = new DatagramPacket(new byte[1024], 1024);
+				while (true) {
+					socket.receive(receivedPacket);
+					String content = new String(receivedPacket.getData(), 0, receivedPacket.getLength());
+					String[] parts = content.split(" ");
+					String part1 = parts[0];
+					String part2 = parts[1];
+					Server host = new Server(part1, part2);
+					hostList.add(host);
+					System.out.println("List of host: ");
+					for (Server s : hostList) {
+						System.out.println(s.hostName);
+
+					}
+				}
+
+			} catch (IOException e) {
+				System.err.println(e.getMessage());
+			}
+
+		});
+		t2.start();
 
 		Thread t = new Thread(() -> {
 			Scanner scanner = new Scanner(System.in);
 			try {
-				System.out.print("Please input the IP address of Echo Server: ");
+				String hostIP = "";
+				System.out.print("Please input the host name: ");
 				String server = scanner.nextLine();
+				for (Server s : hostList) {
+					if (server.equals(s.hostName)) {
+						hostIP = s.ipAddr;
+					}
+				}
 
-				System.out.print("Please input the port number of Echo Server: ");
-				int port = Integer.parseInt(scanner.nextLine());
-
-				clientSocket = new Socket(server, port);
+				clientSocket = new Socket(hostIP, 9999);
 
 				DataInputStream in = new DataInputStream(clientSocket.getInputStream());
 				DataOutputStream out = new DataOutputStream(clientSocket.getOutputStream());

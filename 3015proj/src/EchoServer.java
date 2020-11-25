@@ -26,37 +26,26 @@ public class EchoServer {
 	}
 
 	public EchoServer(int port) throws IOException {
-		System.out.println("Enter the name of this computer: ");
+		System.out.print("Enter the name of this computer: ");
 		Scanner scanner = new Scanner(System.in);
 		String pcName = scanner.nextLine();
+
+		new Thread(() -> {
+			try {
+				UDPreply(pcName);
+			} catch (IOException e1) {
+				e1.printStackTrace();
+			}
+		}).start();
+
 		
-
-//		DatagramSocket socket = new DatagramSocket(9998);
-//		DatagramPacket receivedPacket = new DatagramPacket(new byte[1024], 1024);
-//
-//		String myIp=InetAddress.getLocalHost().getHostAddress();
-//		String reply = myIp+" "+pcName;		
-//
-//		socket.receive(receivedPacket);
-//		String content = new String(receivedPacket.getData(), 0, receivedPacket.getLength());
-//				
-//
-//		if (content.equals("requesting...")) {
-//			InetAddress srcAddr = receivedPacket.getAddress();
-//			int srcPort = receivedPacket.getPort();
-//			DatagramPacket p = new DatagramPacket(reply.getBytes(), reply.length(), srcAddr, srcPort);
-//			socket.send(p);
-//		}
-
 		srvSocket = new ServerSocket(port);
 
 		byte[] buffer = new byte[1024];
 
 		while (true) {
-			System.out.println("Waiting for request...");
-			UDPreply(pcName);
-			
-			System.out.printf("Listening at port %d...\n", port);
+
+			System.out.println("Listening at TCP port "+ port);
 
 			Socket clientSocket = srvSocket.accept();
 
@@ -78,17 +67,20 @@ public class EchoServer {
 			t.start();
 		}
 	}
-	
-	private void UDPreply(String pcName ) throws IOException{
+
+	private void UDPreply(String pcName) throws IOException {
 		DatagramSocket socket = new DatagramSocket(9998);
 		DatagramPacket receivedPacket = new DatagramPacket(new byte[1024], 1024);
+		
+		System.out.println("Listening at UDP port 9998...");
+		
+		
 
-		String myIp=InetAddress.getLocalHost().getHostAddress();
-		String reply = myIp+" "+pcName;		
+		String myIp = InetAddress.getLocalHost().getHostAddress();
+		String reply = myIp + " " + pcName;
 
 		socket.receive(receivedPacket);
 		String content = new String(receivedPacket.getData(), 0, receivedPacket.getLength());
-				
 
 		if (content.equals("requesting...")) {
 			InetAddress srcAddr = receivedPacket.getAddress();
@@ -96,6 +88,7 @@ public class EchoServer {
 			DatagramPacket p = new DatagramPacket(reply.getBytes(), reply.length(), srcAddr, srcPort);
 			socket.send(p);
 		}
+		
 	}
 
 	private void action(Socket clientSocket, byte[] buffer) throws IOException {
@@ -418,7 +411,7 @@ public class EchoServer {
 		}
 	}
 
-	public static void main(String[] args) throws IOException {
+	public static void main(String[] args) throws IOException{
 		User pcA = new User("pcA", "123");
 		User pcB = new User("pcB", "456");
 		User pcC = new User("pcC", "789");
