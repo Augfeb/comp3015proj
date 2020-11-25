@@ -38,17 +38,20 @@ public class EchoServer {
 			}
 		}).start();
 
-		
+//		try {
+//			Thread.sleep(5000);
+//		} catch (InterruptedException e1) {
+//			// TODO Auto-generated catch block
+//			e1.printStackTrace();
+//		}
 		srvSocket = new ServerSocket(port);
 
 		byte[] buffer = new byte[1024];
 
 		while (true) {
 
-			System.out.println("Listening at TCP port "+ port);
-
 			Socket clientSocket = srvSocket.accept();
-
+			System.out.println("Listening at TCP port " + port+"...");
 			synchronized (userList) {
 				list.add(clientSocket);
 				System.out.printf("Total %d clients are connected.\n", list.size());
@@ -71,10 +74,8 @@ public class EchoServer {
 	private void UDPreply(String pcName) throws IOException {
 		DatagramSocket socket = new DatagramSocket(9998);
 		DatagramPacket receivedPacket = new DatagramPacket(new byte[1024], 1024);
-		
+
 		System.out.println("Listening at UDP port 9998...");
-		
-		
 
 		String myIp = InetAddress.getLocalHost().getHostAddress();
 		String reply = myIp + " " + pcName;
@@ -88,7 +89,7 @@ public class EchoServer {
 			DatagramPacket p = new DatagramPacket(reply.getBytes(), reply.length(), srcAddr, srcPort);
 			socket.send(p);
 		}
-		
+
 	}
 
 	private void action(Socket clientSocket, byte[] buffer) throws IOException {
@@ -411,7 +412,7 @@ public class EchoServer {
 		}
 	}
 
-	public static void main(String[] args) throws IOException{
+	public static void main(String[] args) throws IOException {
 		User pcA = new User("pcA", "123");
 		User pcB = new User("pcB", "456");
 		User pcC = new User("pcC", "789");

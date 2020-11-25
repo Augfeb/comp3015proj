@@ -15,12 +15,9 @@ import java.util.Scanner;
 class Server {
 	String ipAddr;
 	String hostName;
-
 	public Server(String ip, String name) {
-
 		ipAddr = ip;
 		hostName = name;
-
 	}
 }
 
@@ -50,16 +47,21 @@ public class EchoClient {
 					System.out.println("List of host: ");
 					for (Server s : hostList) {
 						System.out.println(s.hostName);
-
 					}
 				}
-
 			} catch (IOException e) {
 				System.err.println(e.getMessage());
 			}
 
 		});
 		t2.start();
+		
+		try {
+			Thread.sleep(5000);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 
 		Thread t = new Thread(() -> {
 			Scanner scanner = new Scanner(System.in);
@@ -72,7 +74,6 @@ public class EchoClient {
 						hostIP = s.ipAddr;
 					}
 				}
-
 				clientSocket = new Socket(hostIP, 9999);
 
 				DataInputStream in = new DataInputStream(clientSocket.getInputStream());
@@ -91,8 +92,7 @@ public class EchoClient {
 				String reMsg = (new String(buffer, 0, len)); // receive message (welcome or not) from server
 				System.out.println(reMsg);
 
-				if (reMsg.equals("Wrong password...") || reMsg.equals("User not found...")) { // if cannot log in then
-																								// exit
+				if (reMsg.equals("Wrong password...") || reMsg.equals("User not found...")) { // if cannot log in then exit																			
 					clientSocket.close();
 					scanner.close();
 					return;
