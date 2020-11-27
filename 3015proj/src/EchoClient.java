@@ -59,7 +59,7 @@ public class EchoClient {
 		try {
 			Thread.sleep(5000);
 		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
+			
 			e.printStackTrace();
 		}
 
@@ -284,12 +284,18 @@ public class EchoClient {
 		}
 	}
 
-	private void doOut(DataOutputStream out2, String str) throws IOException {
-		out2.writeInt(str.length());
-		out2.write(str.getBytes(), 0, str.length());
+	private void doOut(DataOutputStream out2, String str){
+		
+		try {
+			out2.writeInt(str.length());
+			out2.write(str.getBytes(), 0, str.length());
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
-	public static void main(String[] args) throws IOException, InterruptedException {
+	public static void main(String[] args){
 		new EchoClient();
 	}
 

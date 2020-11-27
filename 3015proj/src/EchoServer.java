@@ -19,201 +19,205 @@ public class EchoServer {
 	static ArrayList<User> userList = new ArrayList<User>();
 	ArrayList<Socket> list = new ArrayList<Socket>();
 	static final String path = "D:\\proj";
+	static String pcName;
 
-	private void doOut(DataOutputStream out2, String str) throws IOException {
-		out2.writeInt(str.length());
-		out2.write(str.getBytes(), 0, str.length());
+	private void doOut(DataOutputStream out2, String str) {
+		try {
+			out2.writeInt(str.length());
+			out2.write(str.getBytes(), 0, str.length());
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 
-	public EchoServer(int port) throws IOException {
-		System.out.print("Enter the name of this computer: ");
-		Scanner scanner = new Scanner(System.in);
-		String pcName = scanner.nextLine();
+	public EchoServer(int port) {
+		try {
+			srvSocket = new ServerSocket(port);
 
-		srvSocket = new ServerSocket(port);
+			byte[] buffer = new byte[1024];
 
-		byte[] buffer = new byte[1024];
-
-		while (true) {
-			new Thread(() -> {
-				try {
+			while (true) {
+				new Thread(() -> {
 					UDPreply(pcName);
-				} catch (IOException e1) {
-					e1.printStackTrace();
+				}).start();
+
+				Socket clientSocket = srvSocket.accept();
+				System.out.println("Listening at TCP port " + port + "...");
+				synchronized (userList) {
+					list.add(clientSocket);
+					System.out.printf("Total %d clients are connected.\n", list.size());
 				}
-			}).start();
 
-			Socket clientSocket = srvSocket.accept();
-			System.out.println("Listening at TCP port " + port + "...");
-			synchronized (userList) {
-				list.add(clientSocket);
-				System.out.printf("Total %d clients are connected.\n", list.size());
-			}
-
-			Thread t = new Thread(() -> {
-				try {
+				Thread t = new Thread(() -> {
 					action(clientSocket, buffer);
-				} catch (IOException e) {
-					System.err.println("connection dropped.");
-				}
-				synchronized (list) {
-					list.remove(clientSocket);
-				}
-			});
-			t.start();
-		}
-	}
-
-	private void UDPreply(String pcName) throws IOException {
-		DatagramSocket socket = new DatagramSocket(9998);
-		DatagramPacket receivedPacket = new DatagramPacket(new byte[1024], 1024);
-
-		System.out.println("Listening at UDP port 9998...");
-
-		String myIp = InetAddress.getLocalHost().getHostAddress();
-		String reply = myIp + " " + pcName;
-
-		socket.receive(receivedPacket);
-		String content = new String(receivedPacket.getData(), 0, receivedPacket.getLength());
-
-		if (content.equals("requesting...")) {
-			InetAddress srcAddr = receivedPacket.getAddress();
-			int srcPort = receivedPacket.getPort();
-			DatagramPacket p = new DatagramPacket(reply.getBytes(), reply.length(), srcAddr, srcPort);
-			socket.send(p);
-		}
-		socket.close();
-
-	}
-
-	private void action(Socket clientSocket, byte[] buffer) throws IOException {
-		boolean approved = false;
-		boolean userFound = false;
-		DataInputStream in = new DataInputStream(clientSocket.getInputStream());
-		DataOutputStream out = new DataOutputStream(clientSocket.getOutputStream());
-
-		int len = in.readInt();
-		in.read(buffer, 0, len);
-
-		String str = new String(buffer, 0, len);
-
-		String[] parts = str.split(" ");
-		String part1 = parts[0];
-		String part2 = parts[1];
-
-		for (int i = 0; i < userList.size(); i++) { // loop through userlist pcA pcB
-			if (userList.get(i).username.equals(part1)) { // 0:pcA 123 1: pcB 123
-			
-				userFound = true;
-				if (userList.get(i).password.equals(part2)) {
-					
-					str = "Loggin you in...";
-					doOut(out, str);
-					approved = true;
-
-					break;
-				} else {
-				
-					str = ("Wrong password...");
-					doOut(out, str);
-					approved = false;
-					break;
-				}
+					synchronized (list) {
+						list.remove(clientSocket);
+					}
+				});
+				t.start();
 			}
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
-		if (!userFound) {
-			str = ("User not found...");
-			doOut(out, str);
-			approved = false;
+	}
 
+	private void UDPreply(String pcName) {
+		try {
+			DatagramSocket socket = new DatagramSocket(9998);
+			DatagramPacket receivedPacket = new DatagramPacket(new byte[1024], 1024);
+
+			System.out.println("Listening at UDP port 9998...");
+
+			String myIp = InetAddress.getLocalHost().getHostAddress();
+			String reply = myIp + " " + pcName;
+
+			socket.receive(receivedPacket);
+			String content = new String(receivedPacket.getData(), 0, receivedPacket.getLength());
+
+			if (content.equals("requesting...")) {
+				InetAddress srcAddr = receivedPacket.getAddress();
+				int srcPort = receivedPacket.getPort();
+				DatagramPacket p = new DatagramPacket(reply.getBytes(), reply.length(), srcAddr, srcPort);
+				socket.send(p);
+			}
+			socket.close();
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
+	}
 
-		while (approved) {
+	private void action(Socket clientSocket, byte[] buffer) {
+		try {
+			boolean approved = false;
+			boolean userFound = false;
+			DataInputStream in = new DataInputStream(clientSocket.getInputStream());
+			DataOutputStream out = new DataOutputStream(clientSocket.getOutputStream());
 
-			len = in.readInt();
+			int len = in.readInt();
 			in.read(buffer, 0, len);
 
-			String number = new String(buffer, 0, len);
-			ArrayList<String> info;
-			
-			System.out.println();
-			if (number.equals("8")) {
-				break;
-			} else if (number.equals("1")) {
+			String str = new String(buffer, 0, len);
 
-				if (dir(path) != null) {
-					info = dir(path);
-					for (String s : info) {
-						doOut(out, s);
+			String[] parts = str.split(" ");
+			String part1 = parts[0];
+			String part2 = parts[1];
+
+			for (int i = 0; i < userList.size(); i++) { // loop through userlist pcA pcB
+				if (userList.get(i).username.equals(part1)) { // 0:pcA 123 1: pcB 123
+
+					userFound = true;
+					if (userList.get(i).password.equals(part2)) {
+
+						str = "Loggin you in...";
+						doOut(out, str);
+						approved = true;
+
+						break;
+					} else {
+
+						str = ("Wrong password...");
+						doOut(out, str);
+						approved = false;
+						break;
 					}
-				} else {
-					str = "No file/subdirectory in this root directory";
-					doOut(out, str);
-				}
-			} else if (number.equals("2")) {
-				len = in.readInt();
-				in.read(buffer, 0, len);
-				str = new String(buffer, 0, len);
-				String pathName = path+"\\" + str;
-				str = md(pathName);
-				doOut(out, str);
-
-			} else if (number.equals("3")) {
-				len = in.readInt();
-				in.read(buffer, 0, len);
-				str = new String(buffer, 0, len); // store 1 or 2
-
-				if (str.equals("1")) {
-					len = in.readInt();
-					in.read(buffer, 0, len);
-					str = new String(buffer, 0, len); // store filename
-
-					String pathname = path + "\\" + str;
-					
-					transfer(out, pathname);
-				} else {
-					serve(in);
-				}
-
-			} else if (number.equals("4")) {
-				len = in.readInt();
-				in.read(buffer, 0, len);
-				str = new String(buffer, 0, len);
-				String pathName = path +"\\"+ str;
-				str = del(pathName);
-				doOut(out, str);
-
-			} else if (number.equals("5")) {
-				len = in.readInt();
-				in.read(buffer, 0, len);
-				str = new String(buffer, 0, len);
-				String pathName = path + "\\" + str;
-				str = rd(pathName);
-				doOut(out, str);
-
-			} else if (number.equals("6")) {
-				String s1, s2;
-				len = in.readInt();
-				in.read(buffer, 0, len);
-				s1 = path + "\\" + new String(buffer, 0, len);
-
-				len = in.readInt();
-				in.read(buffer, 0, len);
-				s2 = path + "\\" + new String(buffer, 0, len);
-
-				str = rename(s1, s2);
-				doOut(out, str);
-
-			} else if (number.equals("7")) {
-				len = in.readInt();
-				in.read(buffer, 0, len);
-				String filename = path + new String(buffer, 0, len);
-				String[] ary = getInfo(filename);
-
-				for (String s : ary) {
-					doOut(out, s);
 				}
 			}
+			if (!userFound) {
+				str = ("User not found...");
+				doOut(out, str);
+				approved = false;
+
+			}
+
+			while (approved) {
+
+				len = in.readInt();
+				in.read(buffer, 0, len);
+
+				String number = new String(buffer, 0, len);
+				ArrayList<String> info;
+
+				System.out.println();
+				if (number.equals("8")) {
+					break;
+				} else if (number.equals("1")) {
+
+					if (dir(path) != null) {
+						info = dir(path);
+						for (String s : info) {
+							doOut(out, s);
+						}
+					} else {
+						str = "No file/subdirectory in this root directory";
+						doOut(out, str);
+					}
+				} else if (number.equals("2")) {
+					len = in.readInt();
+					in.read(buffer, 0, len);
+					str = new String(buffer, 0, len);
+					String pathName = path + "\\" + str;
+					str = md(pathName);
+					doOut(out, str);
+
+				} else if (number.equals("3")) {
+					len = in.readInt();
+					in.read(buffer, 0, len);
+					str = new String(buffer, 0, len); // store 1 or 2
+
+					if (str.equals("1")) {
+						len = in.readInt();
+						in.read(buffer, 0, len);
+						str = new String(buffer, 0, len); // store filename
+
+						String pathname = path + "\\" + str;
+
+						transfer(out, pathname);
+					} else {
+						serve(in);
+					}
+
+				} else if (number.equals("4")) {
+					len = in.readInt();
+					in.read(buffer, 0, len);
+					str = new String(buffer, 0, len);
+					String pathName = path + "\\" + str;
+					str = del(pathName);
+					doOut(out, str);
+
+				} else if (number.equals("5")) {
+					len = in.readInt();
+					in.read(buffer, 0, len);
+					str = new String(buffer, 0, len);
+					String pathName = path + "\\" + str;
+					str = rd(pathName);
+					doOut(out, str);
+
+				} else if (number.equals("6")) {
+					String s1, s2;
+					len = in.readInt();
+					in.read(buffer, 0, len);
+					s1 = path + "\\" + new String(buffer, 0, len);
+
+					len = in.readInt();
+					in.read(buffer, 0, len);
+					s2 = path + "\\" + new String(buffer, 0, len);
+
+					str = rename(s1, s2);
+					doOut(out, str);
+
+				} else if (number.equals("7")) {
+					len = in.readInt();
+					in.read(buffer, 0, len);
+					String filename = path + "\\" + new String(buffer, 0, len);
+					String[] ary = getInfo(filename);
+
+					for (String s : ary) {
+						doOut(out, s);
+					}
+				}
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
 	}
 
@@ -306,36 +310,41 @@ public class EchoServer {
 		return s;
 	}
 
-	private String[] getInfo(String filename) throws IOException {
+	private String[] getInfo(String filename) {
+
 		File file = new File(filename);
-		String[] strAry;
+		String[] strAry = null;
 		if (!file.exists()) {
 			strAry = new String[1];
 			strAry[0] = "File not found...";
 			return strAry;
 		}
+		try {
 
-		if (file.isFile()) {
-			strAry = new String[16];
-			strAry[0] = ("name : " + file.getName());
-			strAry[1] = ("size (bytes) : " + file.length());
-			strAry[2] = ("absolute path? : " + file.isAbsolute());
-			strAry[3] = ("exists? : " + file.exists());
-			strAry[4] = ("hidden? : " + file.isHidden());
-			strAry[5] = ("dir? : " + file.isDirectory());
-			strAry[6] = ("file? : " + file.isFile());
-			strAry[7] = ("modified (timestamp) : " + file.lastModified());
-			strAry[8] = ("readable? : " + file.canRead());
-			strAry[9] = ("writable? : " + file.canWrite());
-			strAry[10] = ("executable? : " + file.canExecute());
-			strAry[11] = ("parent : " + file.getParent());
-			strAry[12] = ("absolute file : " + file.getAbsoluteFile());
-			strAry[13] = ("absolute path : " + file.getAbsolutePath());
-			strAry[14] = ("canonical file : " + file.getCanonicalFile());
-			strAry[15] = ("canonical path : " + file.getCanonicalPath());
-		} else {
-			strAry = new String[1];
-			strAry[0] = "Not a file...";
+			if (file.isFile()) {
+				strAry = new String[16];
+				strAry[0] = ("name : " + file.getName());
+				strAry[1] = ("size (bytes) : " + file.length());
+				strAry[2] = ("absolute path? : " + file.isAbsolute());
+				strAry[3] = ("exists? : " + file.exists());
+				strAry[4] = ("hidden? : " + file.isHidden());
+				strAry[5] = ("dir? : " + file.isDirectory());
+				strAry[6] = ("file? : " + file.isFile());
+				strAry[7] = ("modified (timestamp) : " + file.lastModified());
+				strAry[8] = ("readable? : " + file.canRead());
+				strAry[9] = ("writable? : " + file.canWrite());
+				strAry[10] = ("executable? : " + file.canExecute());
+				strAry[11] = ("parent : " + file.getParent());
+				strAry[12] = ("absolute file : " + file.getAbsoluteFile());
+				strAry[13] = ("absolute path : " + file.getAbsolutePath());
+				strAry[14] = ("canonical file : " + file.getCanonicalFile());
+				strAry[15] = ("canonical path : " + file.getCanonicalPath());
+			} else {
+				strAry = new String[1];
+				strAry[0] = "Not a file...";
+			}
+		} catch (IOException e) {
+			System.out.println(e.getMessage());
 		}
 		return strAry;
 	}
@@ -345,7 +354,6 @@ public class EchoServer {
 		try {
 			byte[] buffer = new byte[1024];
 			File file = new File(filename);
-
 
 			String s = ("Transfering...");
 			doOut(out, s);
@@ -399,13 +407,17 @@ public class EchoServer {
 		}
 	}
 
-	public static void main(String[] args) throws IOException {
+	public static void main(String[] args) {
+		System.out.print("Enter the name of this computer: ");
+		Scanner scanner = new Scanner(System.in);
+		pcName = scanner.nextLine();
 		User pcA = new User("pcA", "123");
 		User pcB = new User("pcB", "456");
 		User pcC = new User("pcC", "789");
 		userList.add(pcA);
 		userList.add(pcB);
 		userList.add(pcC);
+
 		new EchoServer(9999);
 	}
 }
