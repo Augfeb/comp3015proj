@@ -18,8 +18,8 @@ public class EchoServer {
 	ServerSocket srvSocket;
 	static ArrayList<User> userList = new ArrayList<User>();
 	ArrayList<Socket> list = new ArrayList<Socket>();
-	static final String path = "D:\\proj";
-	static String pcName;
+	static final String path = "D:";
+	
 
 	private void doOut(DataOutputStream out2, String str) {
 		try {
@@ -32,13 +32,19 @@ public class EchoServer {
 
 	public EchoServer(int port) {
 		try {
+			User pcA = new User("pcA", "123");
+			User pcB = new User("pcB", "456");
+			User pcC = new User("pcC", "789");
+			userList.add(pcA);
+			userList.add(pcB);
+			userList.add(pcC);
 			srvSocket = new ServerSocket(port);
 
 			byte[] buffer = new byte[1024];
 
 			while (true) {
 				new Thread(() -> {
-					UDPreply(pcName);
+					UDPreply();
 				}).start();
 
 				Socket clientSocket = srvSocket.accept();
@@ -61,15 +67,16 @@ public class EchoServer {
 		}
 	}
 
-	private void UDPreply(String pcName) {
+	private void UDPreply() {
 		try {
+			
 			DatagramSocket socket = new DatagramSocket(9998);
 			DatagramPacket receivedPacket = new DatagramPacket(new byte[1024], 1024);
 
 			System.out.println("Listening at UDP port 9998...");
 
 			String myIp = InetAddress.getLocalHost().getHostAddress();
-			String reply = myIp + " " + pcName;
+			String reply = myIp + " " + new String(InetAddress.getLocalHost().getHostName());
 
 			socket.receive(receivedPacket);
 			String content = new String(receivedPacket.getData(), 0, receivedPacket.getLength());
@@ -103,7 +110,7 @@ public class EchoServer {
 			String part2 = parts[1];
 
 			for (int i = 0; i < userList.size(); i++) { // loop through userlist pcA pcB
-				if (userList.get(i).username.equals(part1)) { // 0:pcA 123 1: pcB 123
+				if (userList.get(i).username.equals(part1)) { 
 
 					userFound = true;
 					if (userList.get(i).password.equals(part2)) {
@@ -408,15 +415,6 @@ public class EchoServer {
 	}
 
 	public static void main(String[] args) {
-		System.out.print("Enter the name of this computer: ");
-		Scanner scanner = new Scanner(System.in);
-		pcName = scanner.nextLine();
-		User pcA = new User("pcA", "123");
-		User pcB = new User("pcB", "456");
-		User pcC = new User("pcC", "789");
-		userList.add(pcA);
-		userList.add(pcB);
-		userList.add(pcC);
 
 		new EchoServer(9999);
 	}

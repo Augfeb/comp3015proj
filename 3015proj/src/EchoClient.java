@@ -32,7 +32,7 @@ public class EchoClient {
 				String msg = "requesting...";
 				DatagramSocket socket = new DatagramSocket(5555);
 				DatagramPacket packet = new DatagramPacket(msg.getBytes(), msg.length(),
-						InetAddress.getByName("192.168.86.255"), 9998);
+						InetAddress.getByName("255.255.255.255"), 9998);
 				socket.send(packet);
 
 				DatagramPacket receivedPacket = new DatagramPacket(new byte[1024], 1024);
@@ -104,7 +104,7 @@ public class EchoClient {
 
 					System.out.println();
 					System.out.print(
-							"1. Read file list\n2. Create subdirectories\n3. Upload and download files\n4. Delete files\n5. Delete subdirectories\n6. Change file/target name\n7. Read the file¡¦s detail information\n8. Exit");
+							"1. Read file list\n2. Create subdirectories\n3. Upload and download files\n4. Delete files\n5. Delete subdirectories\n6. Change file/target name\n7. Read the file's detail information\n8. Exit");
 					System.out.println();
 					System.out.print("\nType number to perform activities: ");
 					str = scanner.nextLine();
@@ -149,7 +149,7 @@ public class EchoClient {
 							if (s.equals("Transfering..."))
 								serve(in, str);
 							else {
-								System.out.println("hi" + s);
+								System.out.println("Fail to transfer...");
 							}
 
 						} else if (str.equals("2")) {
@@ -296,6 +296,11 @@ public class EchoClient {
 	}
 
 	public static void main(String[] args){
+		
+		Thread t3 = new Thread(() -> {
+			new EchoServer(9999);
+		});
+		t3.start();
 		new EchoClient();
 	}
 
