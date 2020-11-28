@@ -19,7 +19,6 @@ public class EchoServer {
 	static ArrayList<User> userList = new ArrayList<User>();
 	ArrayList<Socket> list = new ArrayList<Socket>();
 	static final String path = "D:";
-	
 
 	private void doOut(DataOutputStream out2, String str) {
 		try {
@@ -42,26 +41,35 @@ public class EchoServer {
 
 			byte[] buffer = new byte[1024];
 
-			while (true) {
-				new Thread(() -> {
+			new Thread(() -> {
+				System.out.println("Listening at UDP port 9998...");
+				while (true) {
 					UDPreply();
-				}).start();
-
-				Socket clientSocket = srvSocket.accept();
+				}
+			}).start();
+			
+			new Thread(() -> {
 				System.out.println("Listening at TCP port " + port + "...");
+			while (true) {
+				Socket clientSocket = null;
+				try {
+					clientSocket = srvSocket.accept();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				
 				synchronized (userList) {
 					list.add(clientSocket);
-					System.out.printf("Total %d clients are connected.\n", list.size());
+					System.out.printf("\nTotal %d clients are connected.\n", list.size());
 				}
 
-				Thread t = new Thread(() -> {
-					action(clientSocket, buffer);
-					synchronized (list) {
-						list.remove(clientSocket);
-					}
-				});
-				t.start();
+				action(clientSocket, buffer);
+				synchronized (list) {
+					list.remove(clientSocket);
+				}
 			}
+			}).start();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -69,11 +77,9 @@ public class EchoServer {
 
 	private void UDPreply() {
 		try {
-			
+
 			DatagramSocket socket = new DatagramSocket(9998);
 			DatagramPacket receivedPacket = new DatagramPacket(new byte[1024], 1024);
-
-			System.out.println("Listening at UDP port 9998...");
 
 			String myIp = InetAddress.getLocalHost().getHostAddress();
 			String reply = myIp + " " + new String(InetAddress.getLocalHost().getHostName());
@@ -110,7 +116,7 @@ public class EchoServer {
 			String part2 = parts[1];
 
 			for (int i = 0; i < userList.size(); i++) { // loop through userlist pcA pcB
-				if (userList.get(i).username.equals(part1)) { 
+				if (userList.get(i).username.equals(part1)) {
 
 					userFound = true;
 					if (userList.get(i).password.equals(part2)) {

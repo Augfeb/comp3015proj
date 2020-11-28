@@ -15,6 +15,7 @@ import java.util.Scanner;
 class Server {
 	String ipAddr;
 	String hostName;
+
 	public Server(String ip, String name) {
 		ipAddr = ip;
 		hostName = name;
@@ -25,197 +26,216 @@ public class EchoClient {
 	Socket clientSocket;
 	static ArrayList<Server> hostList = new ArrayList<>();
 
-	public EchoClient() {
-		System.out.println("Getting response...");
-		Thread t2 = new Thread(() -> {
-			try {
-				String msg = "requesting...";
-				DatagramSocket socket = new DatagramSocket(5555);
-				DatagramPacket packet = new DatagramPacket(msg.getBytes(), msg.length(),
-						InetAddress.getByName("255.255.255.255"), 9998);
-				socket.send(packet);
+	private void request() {
+		try {
+			
+			String msg = "requesting...";
+			DatagramSocket socket = new DatagramSocket(5555);
+			DatagramPacket packet = new DatagramPacket(msg.getBytes(), msg.length(),
+					InetAddress.getByName("255.255.255.255"), 9998);
+			socket.send(packet);
 
-				DatagramPacket receivedPacket = new DatagramPacket(new byte[1024], 1024);
-				while (true) {
-					socket.receive(receivedPacket);
-					String content = new String(receivedPacket.getData(), 0, receivedPacket.getLength());
-					String[] parts = content.split(" ");
-					String part1 = parts[0];
-					String part2 = parts[1];
-					Server host = new Server(part1, part2);
-					hostList.add(host);
+			DatagramPacket receivedPacket = new DatagramPacket(new byte[1024], 1024);
+
+			while (true) {
+				socket.receive(receivedPacket);
+				String content = new String(receivedPacket.getData(), 0, receivedPacket.getLength());
+				System.out.println(content);
+				String[] parts = content.split(" ");
+				String part1 = parts[0];
+				String part2 = parts[1];
+				Server host = new Server(part1, part2);
+				hostList.add(host);
+				if (hostList.size() > 0) {
 					System.out.println("List of host: ");
 					for (Server s : hostList) {
 						System.out.println(s.hostName);
 					}
 				}
-			} catch (IOException e) {
-				System.err.println(e.getMessage());
 			}
+		} catch (IOException e) {
+			System.err.println(e.getMessage());
+		}
+	}
 
+	public EchoClient() {
+
+		Thread t2 = new Thread(() -> {
+			while (true) {
+				System.out.println("Getting response...");
+				request();
+			}
 		});
 		t2.start();
-		
+
 		try {
 			Thread.sleep(5000);
 		} catch (InterruptedException e) {
-			
+
 			e.printStackTrace();
 		}
 
 		Thread t = new Thread(() -> {
-			Scanner scanner = new Scanner(System.in);
-			try {
-				String hostIP = "";
-				System.out.print("Please input the host name: ");
-				String server = scanner.nextLine();
-				for (Server s : hostList) {
-					if (server.equals(s.hostName)) {
-						hostIP = s.ipAddr;
+			if (hostList.size() > 0) {
+				Scanner scanner = new Scanner(System.in);
+				try {
+					String hostIP = "";
+
+					System.out.print("Please input the host name: ");
+					String server = scanner.nextLine();
+					for (Server s : hostList) {
+						if (server.equals(s.hostName)) {
+							hostIP = s.ipAddr;
+						}
 					}
-				}
-				clientSocket = new Socket(hostIP, 9999);
 
-				DataInputStream in = new DataInputStream(clientSocket.getInputStream());
-				DataOutputStream out = new DataOutputStream(clientSocket.getOutputStream());
+					clientSocket = new Socket(hostIP, 9999);
 
-				byte[] buffer = new byte[1024];
+					DataInputStream in = new DataInputStream(clientSocket.getInputStream());
+					DataOutputStream out = new DataOutputStream(clientSocket.getOutputStream());
 
-				System.out.print("Please input username and password: "); // ask for input username and password
-				String str = scanner.nextLine();
+					byte[] buffer = new byte[1024];
 
-				out.writeInt(str.length());
-				out.write(str.getBytes(), 0, str.length()); // send inputted data to server
+					System.out.print("Please input username and password: "); // ask for input username and password
+					String str = scanner.nextLine();
 
-				int len = in.readInt();
-				in.read(buffer, 0, len);
-				String reMsg = (new String(buffer, 0, len)); // receive message (welcome or not) from server
-				System.out.println(reMsg);
+					out.writeInt(str.length());
+					out.write(str.getBytes(), 0, str.length()); // send inputted data to server
 
-				if (reMsg.equals("Wrong password...") || reMsg.equals("User not found...")) { // if cannot log in then exit																			
-					clientSocket.close();
-					scanner.close();
-					return;
-				}
+					int len = in.readInt();
+					in.read(buffer, 0, len);
+					String reMsg = (new String(buffer, 0, len)); // receive message (welcome or not) from server
+					System.out.println(reMsg);
 
-				System.out.println();
-
-				while (true) { // loop event until user choose to exit
+					if (reMsg.equals("Wrong password...") || reMsg.equals("User not found...")) { // if cannot log in
+																									// then
+																									// exit
+						clientSocket.close();
+						scanner.close();
+						return;
+					}
 
 					System.out.println();
-					System.out.print(
-							"1. Read file list\n2. Create subdirectories\n3. Upload and download files\n4. Delete files\n5. Delete subdirectories\n6. Change file/target name\n7. Read the file's detail information\n8. Exit");
-					System.out.println();
-					System.out.print("\nType number to perform activities: ");
-					str = scanner.nextLine();
-					if (str.equals("8")) { // if user choose to exit then exit
-						doOut(out, str);
-						System.out.println("Exit successfully...");
-						break;
-					} else if (str.equals("1")) { // user want to read file list then provide file list
-						doOut(out, str);
-						do {
+
+					while (true) { // loop event until user choose to exit
+
+						System.out.println();
+						System.out.print(
+								"1. Read file list\n2. Create subdirectories\n3. Upload and download files\n4. Delete files\n5. Delete subdirectories\n6. Change file/target name\n7. Read the file's detail information\n8. Exit");
+						System.out.println();
+						System.out.print("\nType number to perform activities: ");
+						str = scanner.nextLine();
+						if (str.equals("8")) { // if user choose to exit then exit
+							doOut(out, str);
+							System.out.println("Exit successfully...");
+							break;
+						} else if (str.equals("1")) { // user want to read file list then provide file list
+							doOut(out, str);
+							do {
+								len = in.readInt();
+								in.read(buffer, 0, len);
+								System.out.println(new String(buffer, 0, len));
+							} while (in.available() > 0);
+						} else if (str.equals("2")) { // create new subdirectories
+							doOut(out, str);
+
+							System.out.println("Enter the subdirectory path: ");
+							str = scanner.nextLine();
+							doOut(out, str);
 							len = in.readInt();
 							in.read(buffer, 0, len);
 							System.out.println(new String(buffer, 0, len));
-						} while (in.available() > 0);
-					} else if (str.equals("2")) { // create new subdirectories
-						doOut(out, str);
 
-						System.out.println("Enter the subdirectory path: ");
-						str = scanner.nextLine();
-						doOut(out, str);
-						len = in.readInt();
-						in.read(buffer, 0, len);
-						System.out.println(new String(buffer, 0, len));
+						} else if (str.equals("3")) {
+							doOut(out, str); // send out 3
+							System.out.println("Input 1 to download; 2 to upload: ");
+							str = scanner.nextLine();
+							doOut(out, str); // send out 1 or 2
 
-					} else if (str.equals("3")) {
-						doOut(out, str); // send out 3
-						System.out.println("Input 1 to download; 2 to upload: ");
-						str = scanner.nextLine();
-						doOut(out, str); // send out 1 or 2
+							if (str.equals("1")) { // choose download
+								System.out.println("Enter the file name to download: ");
+								String filename = scanner.nextLine().trim();
+								doOut(out, filename);// send out pathname
+								System.out.println("Enter the folder to store file: ");
+								str = scanner.nextLine().trim();
 
-						if (str.equals("1")) { // choose download
-							System.out.println("Enter the file name to download: ");
-							String filename = scanner.nextLine().trim();
-							doOut(out, filename);// send out pathname
-							System.out.println("Enter the folder to store file: ");
-							str = scanner.nextLine().trim();
+								len = in.readInt();
+								in.read(buffer, 0, len);
+								String s = new String(buffer, 0, len);
 
-							len = in.readInt();
-							in.read(buffer, 0, len);
-							String s = new String(buffer, 0, len);
+								if (s.equals("Transfering..."))
+									serve(in, str);
+								else {
+									System.out.println("Fail to transfer...");
+								}
 
-							if (s.equals("Transfering..."))
-								serve(in, str);
-							else {
-								System.out.println("Fail to transfer...");
+							} else if (str.equals("2")) {
+								System.out.println("Enter the file path to upload: ");
+								String filename = scanner.nextLine().trim();
+								upload(out, filename);
+								System.out.println("Uploaded...");
 							}
 
-						} else if (str.equals("2")) {
-							System.out.println("Enter the file path to upload: ");
-							String filename = scanner.nextLine().trim();
-							upload(out, filename);
-							System.out.println("Uploaded...");
-						}
+						} else if (str.equals("4")) {
+							doOut(out, str);
 
-					} else if (str.equals("4")) {
-						doOut(out, str);
-
-						System.out.println("Enter the file path to be delected: ");
-						str = scanner.nextLine();
-						doOut(out, str);
-						len = in.readInt();
-						in.read(buffer, 0, len);
-						System.out.println(new String(buffer, 0, len));
-
-					} else if (str.equals("5")) {
-						doOut(out, str);
-
-						System.out.println("Enter the subdirectory path to be delected: ");
-						str = scanner.nextLine();
-						doOut(out, str);
-						len = in.readInt();
-						in.read(buffer, 0, len);
-						System.out.println(new String(buffer, 0, len));
-
-					} else if (str.equals("6")) {
-						doOut(out, str);
-						String s1, s2;
-
-						System.out.println("Enter the file/dir path with original name: ");
-						str = scanner.nextLine();
-						doOut(out, str);
-						System.out.println("Enter the file/dir path with new name: ");
-						str = scanner.nextLine();
-						doOut(out, str);
-						len = in.readInt();
-						in.read(buffer, 0, len);
-						System.out.println(new String(buffer, 0, len));
-
-					} else if (str.equals("7")) {
-						doOut(out, str);
-						System.out.println("Enter the file path: ");
-						str = scanner.nextLine();
-						doOut(out, str);
-						do {
+							System.out.println("Enter the file path to be delected: ");
+							str = scanner.nextLine();
+							doOut(out, str);
 							len = in.readInt();
 							in.read(buffer, 0, len);
 							System.out.println(new String(buffer, 0, len));
-						} while (in.available() > 0);
-					} else {
-						System.out.println();
-						System.out.println("Incorrect value...");
-						System.out.println();
+
+						} else if (str.equals("5")) {
+							doOut(out, str);
+
+							System.out.println("Enter the subdirectory path to be delected: ");
+							str = scanner.nextLine();
+							doOut(out, str);
+							len = in.readInt();
+							in.read(buffer, 0, len);
+							System.out.println(new String(buffer, 0, len));
+
+						} else if (str.equals("6")) {
+							doOut(out, str);
+							String s1, s2;
+
+							System.out.println("Enter the file/dir path with original name: ");
+							str = scanner.nextLine();
+							doOut(out, str);
+							System.out.println("Enter the file/dir path with new name: ");
+							str = scanner.nextLine();
+							doOut(out, str);
+							len = in.readInt();
+							in.read(buffer, 0, len);
+							System.out.println(new String(buffer, 0, len));
+
+						} else if (str.equals("7")) {
+							doOut(out, str);
+							System.out.println("Enter the file path: ");
+							str = scanner.nextLine();
+							doOut(out, str);
+							do {
+								len = in.readInt();
+								in.read(buffer, 0, len);
+								System.out.println(new String(buffer, 0, len));
+							} while (in.available() > 0);
+						} else {
+							System.out.println();
+							System.out.println("Incorrect value...");
+							System.out.println();
+						}
 					}
+
+					System.out.println();
+					scanner.close();
+
+				} catch (IOException ex) {
+					System.err.println("Connection dropped!");
+					System.exit(-1);
 				}
-
-				System.out.println();
-				scanner.close();
-
-			} catch (IOException ex) {
-				System.err.println("Connection dropped!");
-				System.exit(-1);
+			} else {
+				System.out.println("No Host...");
 			}
 		});
 		t.start();
@@ -284,8 +304,8 @@ public class EchoClient {
 		}
 	}
 
-	private void doOut(DataOutputStream out2, String str){
-		
+	private void doOut(DataOutputStream out2, String str) {
+
 		try {
 			out2.writeInt(str.length());
 			out2.write(str.getBytes(), 0, str.length());
@@ -295,8 +315,8 @@ public class EchoClient {
 		}
 	}
 
-	public static void main(String[] args){
-		
+	public static void main(String[] args) {
+
 		Thread t3 = new Thread(() -> {
 			new EchoServer(9999);
 		});
